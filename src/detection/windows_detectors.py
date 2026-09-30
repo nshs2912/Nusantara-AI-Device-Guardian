@@ -53,7 +53,15 @@ def run_windows_detectors(evidence):
     process_items = _items(evidence.get("processes"))
     encoded = [
         p for p in process_items
-        if isinstance(p, dict) and p.get("HasEncodedPowerShell") is True
+        if isinstance(p, dict)
+        and (
+            p.get("HasEncodedPowerShell") is True
+            or re.search(
+                r"powershell(?:\.exe)?[^\n]*-enc(?:odedcommand)?\b",
+                str(p.get("CommandLine", "")),
+                re.I,
+            )
+        )
     ]
     if encoded:
         names = [str(p.get("Name", "PowerShell")) for p in encoded[:5]]
@@ -63,7 +71,7 @@ def run_windows_detectors(evidence):
             "severity": "HIGH",
             "description": (
                 "A process reported an encoded PowerShell execution pattern. "
-                "The raw command line is intentionally not collected."
+                "The live Windows collector does not return raw command-line arguments."
             ),
             "evidence": ", ".join(names),
             "domain": "Malware",
