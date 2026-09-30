@@ -10,7 +10,7 @@ if (-not (Test-Path $Python)) {
 
 & $Python -m pip install --upgrade pyinstaller
 
-& $Python -m PyInstaller --noconfirm --clean --name "Nusantara-AI-Device-Guardian" --onedir --windowed --collect-all streamlit --collect-all altair --collect-all pydeck --collect-all watchdog --add-data "app.py;." --add-data "src;src" "packaging\windows_launcher.py"
+& $Python -m PyInstaller --noconfirm --clean --name "Nusantara-AI-Device-Guardian" --onedir --windowed --collect-all streamlit --collect-all altair --collect-all watchdog --add-data "app.py;." --add-data "src;src" "packaging\windows_launcher.py"
 
 if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller build failed."
