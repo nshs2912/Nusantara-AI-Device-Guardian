@@ -1,6 +1,6 @@
 def sample_device_evidence():
     return {
-        "device": {"platform": "Sample Device", "agent": "safe-simulator-v0.1"},
+        "device": {"platform": "Sample Device", "agent": "safe-simulator-v0.2"},
         "indicators": [
             {"id": "sample-network", "title": "Unusual outbound connection pattern",
              "severity": "MEDIUM", "domain": "Network", "weight": 18,
@@ -10,5 +10,8 @@ def sample_device_evidence():
              "severity": "LOW", "domain": "Persistence", "weight": 8,
              "description": "A simulated startup item has not yet been classified.",
              "evidence": "simulated startup entry: unknown-service"},
+        ],
+        "events": [
+            {"type": "network", "message": "periodic outbound connection to an unclassified destination"}
         ],
     }
