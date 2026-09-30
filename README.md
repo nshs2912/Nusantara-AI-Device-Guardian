@@ -47,3 +47,22 @@ python -m pytest -q
 5. Threat correlation and AI analyst
 6. Safe remediation with explicit approval
 7. Production security hardening
+
+## Android security telemetry
+
+The Android foundation uses a safe, read-only telemetry contract. It currently supports simulated evidence for:
+
+- installed-app source and package metadata
+- Accessibility and notification-access indicators
+- camera, microphone, and location exposure signals
+- suspicious periodic network/DNS indicators
+- root and bootloader integrity signals
+- explainable domain-level risk findings
+
+The current Streamlit deployment **does not inspect a real phone**. It demonstrates the same evidence contract that a future Android agent can populate after explicit user consent. No credentials are collected, no files are deleted, and no remediation is performed automatically.
+
+### Android pipeline
+
+Android Agent (read-only) -> Telemetry Validation -> Android Detectors -> Risk Engine -> Analyst Summary -> Security Console
+
+A production agent should minimize collected data, request only required Android permissions, protect telemetry in transit, and expose clear consent/revocation controls.
