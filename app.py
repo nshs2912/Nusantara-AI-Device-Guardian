@@ -28,7 +28,7 @@ with st.sidebar:
     st.header("Security Assessment")
     show_evidence = st.checkbox("Show raw evidence", value=False)
     st.divider()
-    st.caption("v0.4 Windows read-only agent")
+    st.caption("v0.5 Windows read-only agent")
     st.caption("Assessment controls are available on the dashboard.")
 
 if "scan" not in st.session_state:
@@ -48,13 +48,19 @@ with control_col:
     )
 
 with action_col:
-    run_assessment = st.button("🔍 Run Security Assessment", type="primary", use_container_width=True)
+    run_assessment = st.button(
+        "🔍 Run Security Assessment",
+        type="primary",
+        use_container_width=True,
+    )
 
 device_type = st.session_state.selected_device
 
 if device_type == "🖥️ This Windows Laptop":
     if windows_available:
-        st.success("LOCAL READ-ONLY SCAN — Windows telemetry will be collected from this machine only.")
+        st.success(
+            "LOCAL READ-ONLY SCAN — Windows telemetry will be collected from this machine only."
+        )
     else:
         st.info(
             "Windows local scanning is available when this application runs on Windows. "
@@ -105,6 +111,7 @@ if not st.session_state.scan:
 else:
     evidence, findings, risk, scanned_type, source = st.session_state.scan
     st.success(f"Assessment source: {source}")
+
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Overall Risk", f"{risk['score']}/100")
     c2.metric("Risk Band", risk["band"])
@@ -113,9 +120,53 @@ else:
         "Device",
         evidence["device"].get(
             "model",
-            evidence["device"].get("hostname", evidence["device"].get("platform", scanned_type)),
+            evidence["device"].get(
+                "hostname",
+                evidence["device"].get("platform", scanned_type),
+            ),
         ),
     )
+
+    if source == "LOCAL WINDOWS READ-ONLY":
+        st.subheader("Windows Security Posture")
+        security = evidence.get("security", {})
+        posture = st.columns(5)
+
+        defender = security.get("defender", {}).get("data", {})
+        posture[0].metric(
+            "Defender",
+            "ON" if defender.get("RealTimeProtectionEnabled") else "OFF",
+        )
+
+        firewall_items = security.get("firewall", {}).get("data", [])
+        if isinstance(firewall_items, dict):
+            firewall_items = [firewall_items]
+        firewall_ok = bool(firewall_items) and all(
+            item.get("Enabled") is True
+            for item in firewall_items
+            if isinstance(item, dict)
+        )
+        posture[1].metric("Firewall", "ON" if firewall_ok else "CHECK")
+
+        secure_boot = security.get("secure_boot", {}).get("data", {})
+        secure_boot_state = (
+            "ON"
+            if secure_boot.get("Enabled") is True
+            else "OFF"
+            if secure_boot.get("Supported") is True
+            else "N/A"
+        )
+        posture[2].metric("Secure Boot", secure_boot_state)
+
+        tpm = security.get("tpm", {}).get("data", {})
+        posture[3].metric("TPM", "READY" if tpm.get("TpmReady") else "CHECK")
+
+        uac = security.get("uac", {}).get("data", {})
+        posture[4].metric("UAC", "ON" if uac.get("EnableLUA") else "CHECK")
+
+        st.caption(
+            "Posture indicators describe security configuration. They are not proof that a device is compromised."
+        )
 
     st.subheader("Security Domains")
     domains = risk["domains"]
@@ -128,17 +179,24 @@ else:
         st.success("No suspicious indicators were found in the supplied evidence.")
     else:
         for finding in findings:
-            icon = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🔵"}.get(
-                finding["severity"], "ℹ️"
-            )
+            icon = {
+                "CRITICAL": "🔴",
+                "HIGH": "🟠",
+                "MEDIUM": "🟡",
+                "LOW": "🔵",
+            }.get(finding["severity"], "ℹ️")
             with st.expander(f"{icon} {finding['title']} — {finding['severity']}"):
                 st.write(finding["description"])
-                st.caption(f"Domain: {finding['domain']} • Weight: {finding['weight']}")
+                st.caption(
+                    f"Domain: {finding['domain']} • Weight: {finding['weight']}"
+                )
                 st.code(finding["evidence"])
 
     st.subheader("Security Analyst Summary")
     st.info(risk["summary"])
-    st.caption("A finding is an indicator, not proof of compromise. Verify context before remediation.")
+    st.caption(
+        "A finding is an indicator, not proof of compromise. Verify context before remediation."
+    )
 
     if show_evidence:
         st.subheader("Evidence")
