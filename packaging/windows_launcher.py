@@ -26,9 +26,9 @@ def main():
 
     bootstrap.run(
         app_path,
-        command_line="Nusantara-AI-Device-Guardian",
-        args=[],
-        flag_options=flag_options,
+        False,
+        [],
+        flag_options,
     )
 
 
