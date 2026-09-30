@@ -8,18 +8,20 @@ def risk_band(score):
     return "NORMAL"
 
 def calculate_risk(findings):
-    score = min(100, sum(f["weight"] for f in findings))
+    score = min(100, sum(max(0.0, f["weight"]) for f in findings))
     domains = {}
     for finding in findings:
         domain = finding["domain"]
-        domains[domain] = min(100, domains.get(domain, 0) + finding["weight"])
+        domains[domain] = min(100, domains.get(domain, 0) + max(0.0, finding["weight"]))
     domain_rows = [{"name": name, "score": int(round(value))}
                    for name, value in sorted(domains.items(), key=lambda x: (-x[1], x[0]))]
     band = risk_band(score)
     if findings:
-        summary = (f"The assessment identified {len(findings)} security indicator(s). "
-                   f"The calculated risk is {int(round(score))}/100 ({band}). "
-                   "Review the evidence before taking any remediation action.")
+        top = sorted(findings, key=lambda x: x["weight"], reverse=True)[:3]
+        reasons = ", ".join(f["title"] for f in top)
+        summary = (f"{len(findings)} indicator(s) were identified. Calculated risk: "
+                   f"{int(round(score))}/100 ({band}). Key indicators: {reasons}. "
+                   "Indicators require contextual verification; they do not prove compromise.")
     else:
         summary = "No suspicious indicators were identified in the supplied evidence."
     return {"score": int(round(score)), "band": band, "domains": domain_rows, "summary": summary}
