@@ -18,40 +18,69 @@ st.title("🛡️ Nusantara AI Device Guardian")
 st.caption("AI-assisted device security assessment — evidence-based, explainable, and non-destructive.")
 
 windows_available = os.name == "nt"
-device_options = ["Android Sample", "Sample Device"]
-if windows_available:
-    device_options.insert(0, "This Windows Laptop")
+device_options = [
+    "🖥️ This Windows Laptop",
+    "📱 Android Device",
+    "🧪 Sample Device",
+]
 
 with st.sidebar:
     st.header("Security Assessment")
-    device_type = st.radio("Device", device_options, index=0)
-    if device_type == "This Windows Laptop":
-        st.warning("LOCAL READ-ONLY SCAN")
-        st.write(
-            "This mode inspects minimized Windows security telemetry on this machine only. "
-            "It does not collect passwords, browser secrets, cookies, private documents, or credentials, "
-            "and it performs no remediation."
-        )
-    else:
-        st.write(
-            "Simulation mode uses safe synthetic telemetry. A future Android agent can collect minimized "
-            "read-only telemetry with explicit user consent."
-        )
     show_evidence = st.checkbox("Show raw evidence", value=False)
     st.divider()
     st.caption("v0.4 Windows read-only agent")
+    st.caption("Assessment controls are available on the dashboard.")
 
 if "scan" not in st.session_state:
     st.session_state.scan = None
+if "selected_device" not in st.session_state:
+    st.session_state.selected_device = device_options[0]
 
-if st.button("🔍 Run Security Assessment", type="primary"):
+st.subheader("Security Assessment")
+control_col, action_col = st.columns([3, 1])
+
+with control_col:
+    st.session_state.selected_device = st.selectbox(
+        "Device",
+        device_options,
+        index=device_options.index(st.session_state.selected_device),
+        label_visibility="collapsed",
+    )
+
+with action_col:
+    run_assessment = st.button("🔍 Run Security Assessment", type="primary", use_container_width=True)
+
+device_type = st.session_state.selected_device
+
+if device_type == "🖥️ This Windows Laptop":
+    if windows_available:
+        st.success("LOCAL READ-ONLY SCAN — Windows telemetry will be collected from this machine only.")
+    else:
+        st.info(
+            "Windows local scanning is available when this application runs on Windows. "
+            "In Streamlit Cloud/Linux, this option cannot access your laptop."
+        )
+elif device_type == "📱 Android Device":
+    st.info(
+        "ANDROID DEVICE — currently represented by safe Android telemetry simulation. "
+        "A future Android agent can provide minimized read-only telemetry with explicit consent."
+    )
+else:
+    st.info("SAMPLE DEVICE — safe synthetic telemetry for demonstration and testing.")
+
+if run_assessment:
     try:
-        if device_type == "This Windows Laptop":
+        if device_type == "🖥️ This Windows Laptop":
+            if not windows_available:
+                raise RuntimeError(
+                    "Local Windows scanning requires the application to run on a Windows device. "
+                    "Streamlit Cloud cannot directly scan your Windows laptop."
+                )
             evidence = collect_windows_telemetry()
             validate_windows_telemetry(evidence)
             findings = run_windows_detectors(evidence)
             source = "LOCAL WINDOWS READ-ONLY"
-        elif device_type == "Android Sample":
+        elif device_type == "📱 Android Device":
             evidence = sample_android_evidence()
             validate_android_telemetry(evidence)
             findings = run_android_detectors(evidence)
@@ -70,10 +99,9 @@ if st.button("🔍 Run Security Assessment", type="primary"):
 if not st.session_state.scan:
     st.info("Pilih device lalu jalankan assessment untuk melihat telemetry keamanan.")
     st.markdown("### Available assessment modes")
-    if windows_available:
-        st.markdown("- **This Windows Laptop** — local, read-only Windows telemetry")
-    st.markdown("- **Android Sample** — safe Android security simulation")
-    st.markdown("- **Sample Device** — generic simulation")
+    st.markdown("- **🖥️ This Windows Laptop** — local, read-only Windows telemetry")
+    st.markdown("- **📱 Android Device** — Android security telemetry mode")
+    st.markdown("- **🧪 Sample Device** — safe generic simulation")
 else:
     evidence, findings, risk, scanned_type, source = st.session_state.scan
     st.success(f"Assessment source: {source}")
